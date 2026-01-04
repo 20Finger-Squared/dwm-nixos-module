@@ -15,6 +15,8 @@ let
     }
   );
 
+  x11-key = types.either types.str (types.enum [ 0 ]);
+
   appsSubmoduleType = types.listOf (
     types.submodule {
       options = {
@@ -23,32 +25,191 @@ let
           description = "The flag or argument name";
         };
         argument = mkOption {
-          type = types.str;
+          type = types.nullOr types.str;
           description = "The value for the flag";
+          default = null;
         };
       };
     }
   );
-
-  dwm = pkgs.dwm.overrideAttrs (oldAttrs: {
-    # if package source defined use it else use normal source
-    src = if cfg.package.src != null then cfg.package.src else oldAttrs.src;
-    /*
-      if you wish to add your own patch to the module then use the following format to do so.
-      make sure to remove anything editing the `config.def.h` to ensure that no errors occur
-      ++ (if <enable-patch> then [ <patch-dir> ] else [])
-    */
-    patches =
-      (oldAttrs.patches or [ ])
-      ++ cfg.package.patches
-      ++ (if cfg.patches.gaps.enable then [ ./gaps.diff ] else [ ]);
-    postPatch = "cp ${file} config.h; cp ${file} config.def.h";
-  });
 in
 {
   options.programs.dwm = {
     enable = mkEnableOption "dwm";
     patches = {
+      cool-autostart = {
+        enable = mkEnableOption "cool-autostart";
+        autostart = mkOption {
+          type = types.listOf (
+            types.submodule {
+              options = {
+                cmd = mkOption {
+                  type = types.str;
+                };
+                args = mkOption {
+                  type = types.nullOr types.str;
+                  description = "`null` if no arguments are wanted";
+                };
+              };
+            }
+          );
+          default = [ ];
+        };
+      };
+      keymodes = {
+        enable = mkEnableOption "keymodes patch";
+        scheme = {
+          enable = mkEnableOption "custom scheme for command mode";
+          fg = mkOption {
+            type = types.str;
+            default = "#ffffff";
+          };
+          bg = mkOption {
+            type = types.str;
+            default = "#0078d4";
+          };
+          border = mkOption {
+            type = types.str;
+            default = "#0078d4";
+          };
+        };
+        commandMode = {
+          modifier = mkOption {
+            type = x11-key;
+            default = "MODKEY";
+          };
+          key = mkOption {
+            type = x11-key;
+            default = "XK_Escape";
+          };
+        };
+        insertMode = {
+          modifier = mkOption {
+            type = x11-key;
+            default = "MODKEY";
+          };
+          key = mkOption {
+            type = x11-key;
+            default = "XK_Escape";
+          };
+        };
+        keybinds = {
+          tags =
+            let
+              x11-key-list = types.addCheck (types.listOf x11-key) (x: builtins.length x <= 4);
+            in
+            {
+              viewOnlyThisTag = mkOption {
+                type = x11-key-list;
+                default = [ 0 ];
+                example = [ 0 ];
+              };
+              toggleThisTagInView = mkOption {
+                type = x11-key-list;
+                default = [ "ControlMask" ];
+                example = [ "MODKEY" ];
+              };
+              moveWindowToThisTag = mkOption {
+                type = x11-key-list;
+                default = [ "ShiftMask" ];
+                example = [ "MODKEY" ];
+              };
+              toggleWindowOnThisTag = mkOption {
+                type = x11-key-list;
+                default = [ "ControlMask|ShiftMask" ];
+                example = [ "MODKEY" ];
+              };
+            };
+          commands = {
+            useDefault = mkOption {
+              type = types.bool;
+              default = true;
+              example = false;
+              description = "Whether to add commands default bindings.
+              Only used when programs.dwm.patches.keymodes.keybinds.cmdkeys.useDefault is true. ";
+            };
+            binds = mkOption {
+              default = [ ];
+              example = [ ];
+              description = "custom binds for command mode";
+              type = types.listOf (
+                types.submodule {
+                  options =
+                    let
+                      keybindsListType = (types.addCheck types.listOf x11-key (x: builtins.length x <= 4));
+                    in
+                    {
+                      modifier = mkOption {
+                        # list of a string or 0 of 0<n<=4 in length
+                        type = keybindsListType;
+                        default = [
+                          0
+                          0
+                          0
+                          0
+                        ];
+                        example = [ 0 ];
+                        description = "A list of modifiers to use as leader keys of up to 4 definitions";
+                      };
+                      keysyms = mkOption {
+                        type = keybindsListType;
+                        default = [
+                          0
+                          0
+                          0
+                          0
+                        ];
+                        example = [ 0 ];
+                        description = "A list of x11 keybinds of up to 4 definitions";
+                      };
+                      function = mkOption { type = types.str; };
+                      argument = mkOption { type = types.str; };
+                    };
+                }
+              );
+            };
+          };
+          cmdkeys = {
+            useDefault = mkOption {
+              type = types.bool;
+              default = true;
+              example = false;
+              description = "Whethere to add the patches default keybinds";
+            };
+            binds = mkOption {
+              type = types.listOf (
+                types.submodule {
+                  options = {
+                    modifier = mkOption {
+                      type = x11-key;
+                      default = "MODKEY";
+                      description = "If left unbound will use default modifier. Use 0 for no modifier, or modifier strings like MODKEY|ShiftMask";
+                    };
+                    key = mkOption {
+                      type = x11-key;
+                      default = "XK_p";
+                      description = "Uses X11 keys remember that SHIFT will modify the keycode";
+                    };
+                    function = mkOption {
+                      type = types.str;
+                      default = "spawn";
+                      description = "The function to call once the keybind is pressed";
+                    };
+                    argument = mkOption {
+                      type = types.str;
+                      default = ".v = dmenucmd";
+                      description = "The argument for the function";
+                    };
+                  };
+                }
+              );
+              default = [ ];
+              example = [ ];
+              description = "custom binds for keymodes. Make sure to bind `clearcmd` and `setkeymode ui. = ModeInsert`";
+            };
+          };
+        };
+      };
       gaps = {
         enable = mkEnableOption "gaps patch";
         width = mkOption {
@@ -67,22 +228,22 @@ in
     tagKeys = {
       modifiers = {
         viewOnlyThisTag = mkOption {
-          type = types.str;
+          type = x11-key;
           default = "MODKEY";
           example = "MODKEY";
         };
         toggleThisTagInView = mkOption {
-          type = types.str;
+          type = x11-key;
           default = "MODKEY|ControlMask";
           example = "MODKEY";
         };
         moveWindowToThisTag = mkOption {
-          type = types.str;
+          type = x11-key;
           default = "MODKEY|ShiftMask";
           example = "MODKEY";
         };
         toggleWindowOnThisTag = mkOption {
-          type = types.str;
+          type = x11-key;
           default = "MODKEY|ControlMask|ShiftMask";
           example = "MODKEY";
         };
@@ -93,7 +254,7 @@ in
           types.submodule {
             options = {
               key = mkOption {
-                type = types.str;
+                type = x11-key;
                 default = "XK_1";
                 example = "XK_9";
               };
@@ -144,6 +305,7 @@ in
             tag = 8;
           }
         ];
+        description = "If empty creates no tag keys. These are the binds that define how to switch tags";
       };
     };
 
@@ -292,6 +454,11 @@ in
         default = null;
         description = "Custom source for the dwm package";
       };
+      buildInputs = mkOption {
+        type = types.listOf types.package;
+        default = [ ];
+        example = [ xfixes ];
+      };
     };
 
     borderpx = mkOption {
@@ -302,7 +469,7 @@ in
     };
 
     modifier = mkOption {
-      type = types.str;
+      type = x11-key;
       default = "Mod1Mask";
       example = "Mod4Mask";
       description = "The default modifier for keybinds";
@@ -317,11 +484,11 @@ in
 
     appLauncher = {
       modifier = mkOption {
-        type = types.str;
+        type = x11-key;
         default = "MODKEY";
       };
       launchKey = mkOption {
-        type = types.str;
+        type = x11-key;
         default = "XK_p";
       };
       appCmd = mkOption {
@@ -369,11 +536,11 @@ in
 
     terminal = {
       modifier = mkOption {
-        type = types.str;
+        type = x11-key;
         default = "MODKEY|ShiftMask";
       };
       launchKey = mkOption {
-        type = types.str;
+        type = x11-key;
         default = "XK_Return";
       };
 
@@ -456,28 +623,26 @@ in
     };
 
     colors =
-      mapAttrs
-        (
-          name: default:
-          mkOption {
-            type = types.submodule {
-              options = genAttrs [ "fg" "bg" "border" ] (_: mkOption { type = types.str; });
-            };
-            inherit default;
-          }
-        )
-        {
-          SchemeNorm = {
-            fg = "#bbbbbb";
-            bg = "#222222";
-            border = "#444444";
-          };
-          SchemeSel = {
-            fg = "#eeeeee";
-            bg = "#005577";
-            border = "#005577";
-          };
+      let
+        colors = x: {
+          fg = mkOption { type = types.str; };
+          bg = mkOption { type = types.str; };
+          border = mkOption { type = types.str; };
+          default = x;
         };
+      in
+      {
+        SchemeNorm = colors {
+          fg = "#bbbbbb";
+          bg = "#222222";
+          border = "#444444";
+        };
+        SchemeSel = colors {
+          fg = "#eeeeee";
+          bg = "#005577";
+          border = "#005577";
+        };
+      };
 
     rules = mkOption {
       type = types.listOf (
@@ -551,12 +716,12 @@ in
           types.submodule {
             options = {
               modifier = mkOption {
-                type = types.either types.str (types.enum [ 0 ]);
+                type = x11-key;
                 default = "MODKEY";
                 description = "If left unbound will use default modifier. Use 0 for no modifier, or modifier strings like MODKEY|ShiftMask";
               };
               key = mkOption {
-                type = types.str;
+                type = x11-key;
                 default = "XK_p";
                 description = "Uses X11 keys remember that SHIFT will modify the keycode";
               };
@@ -604,6 +769,30 @@ in
     };
   };
   config = mkIf cfg.enable {
+    nixpkgs.overlays = [
+      (final: prev: {
+        dwm = prev.dwm.overrideAttrs (oldAttrs: {
+          # if package source defined use it else use normal source
+          src = if cfg.package.src != null then cfg.package.src else oldAttrs.src;
+          /*
+            if you wish to add your own patch to the module then use the following format to do so.
+            make sure to remove anything editing the `config.def.h` to ensure that no errors occur
+            ++ (optional <enable-patch> [ <patch-dir> ])
+          */
+          buildInputs = oldAttrs.buildInputs ++ cfg.package.buildInputs;
+          patches =
+            (oldAttrs.patches or [ ])
+            ++ cfg.package.patches
+            ++ (optional cfg.patches.gaps.enable ./patches/gaps.diff)
+            ++ (optional cfg.patches.cool-autostart.enable [ ./patches/cool-autostart.diff ])
+            ++ (optional cfg.patches.keymodes.enable [ ./patches/keymodes/keymodes.patch ])
+            ++ (optional (cfg.patches.keymodes.scheme.enable && cfg.patches.keymodes.enable) (
+              ./patches/keymodes/addons/SchemeCommandMode.patch
+            ));
+          postPatch = "cp ${file} config.h; cp ${file} config.def.h";
+        });
+      })
+    ];
     system.build.dwm-config = file;
     services = {
       libinput.enable = true;
@@ -611,7 +800,7 @@ in
         enable = true;
         windowManager.dwm = {
           enable = true;
-          package = dwm;
+          package = pkgs.dwm;
         };
       };
     };
