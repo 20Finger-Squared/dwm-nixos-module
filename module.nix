@@ -4,8 +4,16 @@
   pkgs,
   ...
 }:
-with lib;
 let
+  inherit (lib)
+    types
+    mkOption
+    mkEnableOption
+    genAttrs
+    mkIf
+    optional
+    ;
+
   cfg = config.programs.dwm;
 
   file = pkgs.writeText "config.c" (
@@ -457,7 +465,7 @@ in
       buildInputs = mkOption {
         type = types.listOf types.package;
         default = [ ];
-        example = [ xfixes ];
+        example = [ lib.xfixes ];
       };
     };
 
