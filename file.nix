@@ -40,7 +40,9 @@ in
       [ ${pair.name} ] = { "${pair.value.fg}", "${pair.value.bg}", "${pair.value.border}" }
     '') (mapAttrsToList (name: value: { inherit name value; }) cfg.colors)
   },
-  ${optionalString cfg.patches.keymodes.scheme.enable ''[SchemeCommandMode] = { "${cfg.patches.keymodes.scheme.fg}", "${cfg.patches.keymodes.scheme.bg}", "${cfg.patches.keymodes.scheme.border}" }''}
+  ${optionalString (cfg.patches.keymodes.scheme.enable && cfg.patches.keymodes.enable)
+    ''[SchemeCommandMode] = { "${cfg.patches.keymodes.scheme.fg}", "${cfg.patches.keymodes.scheme.bg}", "${cfg.patches.keymodes.scheme.border}" }''
+  }
    };
 
   ${
@@ -105,10 +107,12 @@ in
       },
   };
 
-  ${optionalString (cfg.patches.keymodes.enable) import ./file-parts/custom-parts/keymodes.nix {
-    inherit lib;
-    inherit config;
-  }}
+  ${optionalString (cfg.patches.keymodes.enable) (
+    import ./file-parts/custom-parts/keymodes.nix {
+      inherit lib;
+      inherit config;
+    }
+  )}
   ${optionalString (cfg.patches.cool-autostart.enable) (
     import ./file-parts/custom-parts/cool-autostart.nix {
       inherit lib;

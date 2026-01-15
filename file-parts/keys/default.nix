@@ -150,9 +150,10 @@ in
   },
   ${optionalString (cfg.patches.keymodes.enable)
     # create tag keys bindings
-    concatMapStringsSep
-    "\n        "
-    (tag: ''TAGKEYS(${tag.key}, ${toString tag.tag})'')
-    cfg.tagKeys.definitions
+    (
+      concatMapStringsSep "\n        " (
+        tag: ''TAGKEYS(${tag.key}, ${toString tag.tag})''
+      ) cfg.tagKeys.definitions
+    )
   }
 ''
