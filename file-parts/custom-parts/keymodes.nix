@@ -12,7 +12,7 @@ in
       	/* modifier                    keys                     function         argument */
       	{ 0,                           XK_Escape,               clearcmd,        {0} },
       	{ ControlMask,                 XK_g,                    clearcmd,        {0} },
-        { 0,                           XK_i,                    setkeymode,      {.ui = ModeInsert} },
+        { 0,                   XK_i,                    setkeymode,      {.ui = ModeInsert} },
     ''}
     ${
       # create keys based on user definintions
@@ -47,7 +47,7 @@ in
         	{ {0,           0, 0, 0},    { XK_b,      0, 0, 0},   togglebar,      {0} },
         	{ {0,           0, 0, 0},    { XK_j,      0, 0, 0},   focusstack,     {.i = +1 } },
         	{ {0,           0, 0, 0},    { XK_k,      0, 0, 0},   focusstack,     {.i = -1 } },
-        	{ {0,           0, 0, 0},    { XK_i,      0, 0, 0},   incnmaster,     {.i = +1 } },
+        	{ {ShiftMask,   0, 0, 0},    { XK_i,      0, 0, 0},   incnmaster,     {.i = +1 } },
         	{ {0,           0, 0, 0},    { XK_d,      0, 0, 0},   incnmaster,     {.i = -1 } },
         	{ {0,           0, 0, 0},    { XK_h,      0, 0, 0},   setmfact,       {.f = -0.05} },
         	{ {0,           0, 0, 0},    { XK_l,      0, 0, 0},   setmfact,       {.f = +0.05} },
